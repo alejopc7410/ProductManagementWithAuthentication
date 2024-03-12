@@ -1,0 +1,230 @@
+﻿
+@{
+    ViewBag.Title = "Home";
+}
+
+<script src="~/Scripts/jquery-3.4.1.js"></script>
+<script src="~/Scripts/bootstrap.js"></script>
+<link href="~/Content/bootstrap.css"/>
+
+<script type="text/javascript">
+    $(document).ready(function () { LoadData(); })
+     
+    function LoadData() {
+        $.ajax({
+            url: "/Product/GetProducts",
+            dataType: "json",
+            type: "GET",
+            contentType: "application/json",
+            success: function (response) {
+                console.log(response)
+                var html = '';
+                $.each(response, function (key, item) {
+                    html += '<tr>'
+                    html += '<td>' + item.Name + '</td>'
+                    html += '<td>' + item.Description + '</td>'
+                    html += '<td>$' + item.Price + '</td>'
+                    html += '<td>' + item.Quantity + '</td>'
+                    html += '<td>' + item.Category + '</td>'
+                    html += '<td>' + item.Supplier + '</td>'
+                    html += '<td> <a href="#" onClick="GetProduct(' + item.ProductID + ')">Edit</a> | <a href="#" onClick="DeleteProduct(' + item.ProductID + ')">Delete</a> </td>'
+                    html += '</tr>'
+                })
+                $('.product-tbody').html(html)
+            },
+            error: function (errorMessage) {
+                alert(errorMessage.responseText)
+            }
+        })
+    }
+
+    function AddProduct() {
+        var product = {
+            Name: $('#Name').val(),
+            Description: $('#Description').val(),
+            Price: $('#Price').val(),
+            Quantity: $('#Quantity').val(),
+            Category: $('#Category').val(),
+            Supplier: $('#Supplier').val()
+        }
+
+        $.ajax({
+            url: "/Product/AddProduct",
+            contentType: "application/json",
+            type: "POST",
+            datatype: "json",
+            data: JSON.stringify(product),
+            success: function (response) {
+                if (response == true) {
+                    LoadData();
+                    ClearInputs();
+                    $('.modal-title').text("Add New Product")
+                    $('#modalForm').modal('hide')
+                    $('#errorMessage').text("")
+                }
+                else {
+                    $('#errorMessage').text('Check all the fields and try again')
+                }
+                
+            },
+            error: function (errorMessage) {
+                alert (errorMessage.responseText)
+            }
+        })
+    }
+
+    function GetProduct(productId) {
+        $.ajax({
+            url: "/Product/GetProduct",
+            contentType: "application/json",
+            dataType: "json",
+            data: { productId: productId },
+            type: "GET",
+            success: function (response) {
+                $('.modal-title').text('Edit Product');
+                $('#EditBtn').show();
+                $('#AddBtn').hide();
+                $('#modalForm').modal('show')
+                $('.modal-title').text('Edit Product');
+                $('#ProductId').val(response.ProductID),
+                $('#Name').val(response.Name),
+                $('#Description').val(response.Description),
+                $('#Price').val(response.Price),
+                $('#Quantity').val(response.Quantity),
+                $('#Category').val(response.Category),
+                $('#Supplier').val(response.Supplier)
+            },
+            error: function (errorMessage) {
+                alert(errorMessage.responseText)
+            }
+        })
+    }
+
+    function EditProduct() {
+        var product = {
+            ProductID: $('#ProductId').val(),
+            Name: $('#Name').val(),
+            Description: $('#Description').val(),
+            Price: $('#Price').val(),
+            Quantity: $('#Quantity').val(),
+            Category: $('#Category').val(),
+            Supplier: $('#Supplier').val()
+        }
+
+        $.ajax({
+            url: "/Product/EditProduct",
+            contentType: "application/json",
+            dataType: "json",
+            type: "POST",
+            data: JSON.stringify(product),
+            success: function (response) {
+                LoadData();
+                $('#modalForm').modal('hide')
+            },
+            error: function (errorMessage) {
+                alert(errorMessage.responseText)
+            }
+        })
+    }
+
+    function DeleteProduct(productId) {
+        var ans = confirm('Are you sure to delete this product?')
+        if (ans) {
+            $.ajax({
+                url: "/Product/DeleteProduct",
+                contentType: "application/json",
+                dataType: "json",
+                type: "POST",
+                data: JSON.stringify({ productId: productId }),
+                success: function (response) {
+                    LoadData();
+                },
+                error: function (errorMessage) {
+                    alert(errorMessage.responseText)
+                }
+            })
+        }        
+    }
+
+    function ClearInputs() {
+        $('#Name').val(""),
+        $('#Description').val(""),
+        $('#Price').val(""),
+        $('#Quantity').val(""),
+        $('#Category').val(""),
+        $('#Supplier').val("")
+    }
+    function ShowAddModal() {
+        ClearInputs();
+        $('.modal-title').text('Add New Product');
+        $('#EditBtn').hide();
+        $('#AddBtn').show();
+    }
+</script>
+
+<body>
+    <center>
+        <h2 class="card-title">Products Management</h2>
+        <br />
+        <table class="table table-hover table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <td>Name</td>
+                    <td>Description</td>
+                    <td>Price</td>
+                    <td>Quantity</td>
+                    <td>Category</td>
+                    <td>Supplier</td>
+                    <td>Actions</td>
+                </tr>
+            </thead>
+            <tbody class="product-tbody">
+                @*List of the products*@
+            </tbody>
+        </table>
+        <br />
+
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalForm" onclick="ShowAddModal();">Add New Product</button>
+
+        <div class="modal fade" id="modalForm" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title"></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form>
+                            <input type="hidden" id="ProductId"/>
+                            <div class="mb-3">
+                                <input type="text" class="form-control" id="Name" placeholder="Name">
+                            </div>
+                            <div class="mb-3">
+                                <input type="text" class="form-control" id="Description" placeholder="Description">
+                            </div>
+                            <div class="mb-3">
+                                <input type="number" class="form-control" id="Price" placeholder="Price">
+                            </div>
+                            <div class="mb-3">
+                                <input type="number" class="form-control" id="Quantity" placeholder="Quantity">
+                            </div>
+                            <div class="mb-3">
+                                <input type="text" class="form-control" id="Category" placeholder="Category">
+                            </div>
+                            <div class="mb-3">
+                                <input type="text" class="form-control" id="Supplier" placeholder="Supplier">
+                            </div>
+                            <br />
+                            <p id="errorMessage"></p>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" id="AddBtn" onclick="AddProduct();" data-bs-dismiss="modal">Add</button>
+                        <button type="button" class="btn btn-primary" id="EditBtn" onclick="EditProduct();" data-bs-dismiss="modal">Save Changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </center>
+</body>
+
